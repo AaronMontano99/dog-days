@@ -19,14 +19,25 @@ scoped to whatever system first needs to write into those arrays.
 
 ## What exists today
 
+- **You play as your dog.** There is no separate human avatar — a player's active
+  dog IS their Roblox character, controlled with standard WASD + camera. Confirmed
+  as the intended design (not assumed) before `DogCharacterService` was built.
 - **Breeds**: 5 free starter breeds — Blue Heeler, Labrador Retriever, Beagle,
   German Shepherd, Siberian Husky. Every new player owns all 5 from profile
   creation (see `BreedConfig.luau`). Breed choice currently only affects
-  `BreedId`/display metadata — no gameplay differences between breeds exist yet.
+  `BreedId`/display metadata/coat color — no gameplay differences between breeds
+  exist yet (e.g. no per-breed speed or stat differences).
 - **Dog creation**: a player can request a dog be created with a chosen breed and
   name (`CreateDogRequest` → `DogProfileService.CreateDog`). Every new dog starts as
   a `Puppy` with neutral (50/100) `Traits` (`Loyalty`, `Energy`, `Curiosity`,
-  `Obedience`), `Bond = 0`, and zeroed `Statistics`.
+  `Obedience`), `Bond = 0`, and zeroed `Statistics`. A brand-new player is
+  automatically given one starter dog (`EnsureStarterDog`) so there's something to
+  spawn as — there's no dog-selection UI yet to make breed/name a real choice at
+  signup.
+- **Movement**: walking/running/jumping via a standard Roblox `Humanoid` on a
+  placeholder block-primitive rig (no real dog art exists yet — see
+  `docs/ROADMAP.md`). No breed-specific movement differences, no animations (legs
+  don't move while walking), no stamina/sprint system.
 - **Persistence**: dogs and player currency/settings persist via `ProfileStore`.
   There's a soft cap of `GameConfig.Dog.MaxDogsPerPlayer` (6) dogs per player.
 
@@ -41,11 +52,9 @@ scoped to whatever system first needs to write into those arrays.
   so a premium breed is a data addition, not a schema change — but no premium breed
   is defined and no Robux purchase flow exists. This was explicitly out of scope for
   the foundation task that built this repo.
-- **World/exploration**: `Workspace` has no built environment yet. "Discoveries"
+- **World/exploration**: `Workspace` has nothing but a flat placeholder testing
+  surface (`TemporaryTestGround`) — no built environment yet. "Discoveries"
   presumably ties to exploring a world, but that world doesn't exist in source yet.
-- **Dog movement/AI**: intentionally the *next* task after this one (see
-  `docs/ROADMAP.md`) — this repo currently has no dog character rig or movement
-  code at all.
 
 ## Currency
 

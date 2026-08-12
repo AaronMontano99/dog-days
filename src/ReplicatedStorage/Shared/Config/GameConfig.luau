@@ -14,6 +14,10 @@ local GameConfig = {
 		-- Conservative allow-list for a name typed before Roblox chat filtering runs.
 		-- See docs/SECURITY.md — this is a shape check, not a moderation system.
 		NamePattern = "^[%a][%a%s'-]*$",
+		-- Used by DogProfileService.EnsureStarterDog for a brand-new player's
+		-- automatically-granted first dog — never shown as a suggestion, just a
+		-- placeholder so movement is testable with zero UI built yet.
+		DefaultStarterName = "Buddy",
 	},
 
 	Traits = {

@@ -25,7 +25,7 @@ aftman.toml
 src/
   ReplicatedStorage/
     Shared/
-      Modules/        -- engine-agnostic shared code (e.g. Loader)
+      Modules/        -- engine-agnostic shared code (Loader, DogRigFactory, HexColor)
       Types/           -- Luau `export type` declarations, shared server+client
       Config/          -- shared, non-secret configuration (GameConfig, BreedConfig)
       Net/             -- RemoteDefs (remote catalog) — shared contract only
@@ -37,6 +37,7 @@ src/
         PlayerDataService.luau
         BreedService.luau
         DogProfileService.luau
+        DogCharacterService.luau
       Net/
         RemoteManager.luau
         RateLimiter.luau
@@ -222,6 +223,36 @@ and no purchase flow exists yet; adding a premium breed later is a data change
 `BreedService` (server) is the authority on ownership — it cross-references
 `BreedConfig` (what exists, what's free) against `PlayerDataService`'s
 `OwnedBreeds` (what this specific player owns). The client never decides ownership.
+
+## Character control model
+
+**The dog IS the player's avatar.** There is no separate human character — a
+player's `Player.Character` is set directly to their active dog's rig. This is a
+deliberate choice (confirmed with the project owner before building), not a default.
+
+- `Players.CharacterAutoLoads = false` (set in `DogCharacterService.Init()`) —
+  Roblox's automatic avatar loading is disabled; `DogCharacterService` is the only
+  thing that ever assigns `Player.Character`.
+- No dog rig/mesh asset exists yet, so `DogRigFactory`
+  (`ReplicatedStorage/Shared/Modules/DogRigFactory.luau`) builds a placeholder rig
+  entirely out of `Part`s + a `Humanoid` at runtime. It only has to produce something
+  that satisfies the engine's character contract — a `Humanoid` and a part named
+  exactly `"HumanoidRootPart"` — so swapping in a real rig later is a change to
+  `DogRigFactory` alone, not to any spawn/movement code.
+- `DogCharacterService.EnsureStarterDog` (via `DogProfileService`) guarantees every
+  player has an `ActiveDogId` before a rig is built — new players are silently
+  granted a default starter dog, since there's no dog-selection UI yet to make that a
+  real choice.
+- A `TemporaryTestGround` part is created at boot (`DogCharacterService.Init()`) so
+  there's somewhere to stand — `Workspace` has no real level geometry yet. Delete it
+  the moment real world geometry exists; it is explicitly not game content.
+- `StarterPlayer/StarterPlayerScripts` and `StarterPlayer/StarterCharacterScripts`,
+  `StarterGui`, and `Workspace` all set `"$ignoreUnknownInstances": true` in
+  `default.project.json`. Without this, connecting Rojo would **delete** Roblox's
+  default `PlayerModule` (camera + WASD control scripts) from `StarterPlayerScripts`,
+  since Rojo would otherwise treat anything not declared in the filesystem as stale
+  and remove it on sync. We rely on those default scripts for camera/movement input —
+  we never wrote our own — so losing them silently would break movement entirely.
 
 ## Security principles
 

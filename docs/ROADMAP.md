@@ -1,6 +1,6 @@
 # Roadmap
 
-## Done (this foundation task)
+## Done (foundation task)
 
 - Rojo project structure and mappings (`default.project.json`)
 - `Loader` — shared `Init()`/`Start()` engine for services and controllers
@@ -14,25 +14,32 @@
   data architecture for future premium breeds (no purchase flow)
 - `DogProfileService`: dog creation (CRUD-level only) with server-side validation
 
-## Next task: Dog Character + Movement V1
+## Done (Dog Character + Movement V1)
 
-Explicitly **not** part of this foundation task. Scope, when picked up:
+- Player's `Character` is their active dog — `DogCharacterService`,
+  `Players.CharacterAutoLoads = false`, manual `player.Character` assignment. See
+  CLAUDE.md's "Character control model".
+- `DogRigFactory`: placeholder block-primitive rig built from `Part`s + `Humanoid` at
+  runtime (no art asset exists yet). Legs are static — no walk animation.
+- `DogProfileService.EnsureStarterDog`: new players are auto-granted a default
+  starter dog (no selection UI exists yet).
+- `TemporaryTestGround`: a flat placeholder part so the rig has somewhere to stand.
+- Basic respawn: `Humanoid.Died` → re-spawn the same dog after a fixed delay.
+- Rojo project fix: `$ignoreUnknownInstances: true` on `StarterPlayerScripts`,
+  `StarterCharacterScripts`, `StarterGui`, `Workspace` — without this, connecting
+  Rojo would have deleted Roblox's default camera/control scripts.
 
-- A physical dog character rig (model/rig TBD — currently no asset exists under
-  `ServerStorage/Assets/Dogs`)
-- Spawning a dog character in `Workspace` tied to a player's `ActiveDogId`
-- Basic movement (walk/run), likely via `Humanoid` or a custom controller depending
-  on how "dog-like" movement needs to feel
-- Whatever animation assets that requires, added under
-  `ServerStorage/Assets/Animations`
+## Next up (unordered, unscoped — not commitments)
 
-## After that (unordered, unscoped — not commitments)
-
-- World/exploration space for Discoveries to exist in
+- **Real dog art**: replace `DogRigFactory`'s block primitives with an actual rig +
+  walk/run/sit animations (`ServerStorage/Assets/Animations`). Swapping this out
+  shouldn't require touching `DogCharacterService`.
+- **Real world**: delete `TemporaryTestGround`, build actual level geometry.
+- **Run toggle / stamina**: V1 has a single fixed `WalkSpeed`; no sprint exists.
 - Memory/Discovery data shape + the systems that write into those arrays
 - Trait and Bond progression from actual gameplay
 - Life stage transitions (Puppy → Adult → Senior)
 - Chat-safe name filtering (`TextService:FilterStringAsync`) — see
   `docs/SECURITY.md`
 - Premium breed purchase flow (MarketplaceService / Robux products)
-- UI: breed selection, dog roster, HUD
+- UI: dog roster / selection (currently silently auto-assigned), breed picker, HUD

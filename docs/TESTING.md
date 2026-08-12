@@ -28,6 +28,19 @@ None of this is a substitute for running the game. No Luau syntax/type checker
 the final report's "Studio Validation Required" section for the concrete list of
 things that can only be confirmed by opening this in Roblox Studio.
 
+For Dog Character + Movement V1 specifically: the same checks (JSON validity, path
+existence, suffix conventions, require graph) were re-run after adding
+`DogCharacterService`/`DogRigFactory`/`HexColor`. One assumption in this feature
+could **not** be verified without Studio and is the single riskiest untested claim
+in the codebase: that manually assigning `player.Character = model` actually fires
+`Player.CharacterAdded`, which is what makes Roblox's default camera/control scripts
+(`StarterPlayerScripts.PlayerModule`, preserved via `$ignoreUnknownInstances` — see
+CLAUDE.md) attach to the dog rig. Community sources describe this exact pattern
+(parent to `Workspace`, then assign `player.Character`) as standard, but this
+specific behavior isn't spelled out in Roblox's own API reference. **Verify this
+first** when this repo is opened in Studio — if the camera doesn't follow the dog
+after joining, this is the first thing to check.
+
 ## What's not tested and has no framework yet
 
 - No unit tests exist for pure logic that would benefit from them, e.g.:

@@ -1,10 +1,11 @@
 # Security
 
-This documents the security review done at the end of the foundation task, covering
-every client/server pathway that exists in the repo right now: `PlayerDataSync`,
-`CreateDogRequest`, `CreateDogResult`. Re-run this review whenever a new remote is
-added — this file should describe the pathways that actually exist, not just the
-ones that existed when it was written.
+This documents the security review done at the end of the foundation task (and
+extended for Dog Character + Movement V1), covering every client/server pathway that
+exists in the repo right now: `PlayerDataSync`, `CreateDogRequest`,
+`CreateDogResult`, and the (remote-free) character spawn flow. Re-run this review
+whenever a new remote or spawn pathway is added — this file should describe the
+pathways that actually exist, not just the ones that existed when it was written.
 
 ## Server owns persistence
 
@@ -71,6 +72,23 @@ per-player). Argument shape (`ArgTypes`) is checked before the handler runs, but
 that's a `typeof()` check, not deep payload validation — each Service is still
 responsible for validating the *values* it receives (see `DogProfileService`'s
 `isValidName` and `BreedService.CanPlayerUseBreed` for examples of that layer).
+
+## Character spawn: no client input at all
+
+There is no remote involved in spawning a dog character — `DogCharacterService`
+decides everything server-side, driven only by `Players.PlayerAdded`:
+
+- Which dog spawns (`DogProfileService.EnsureStarterDog`/`ActiveDogId`) is entirely
+  server-state; the client cannot request a specific dog or breed to spawn as.
+- `Humanoid.WalkSpeed`/`JumpPower` are set once, server-side, in `DogRigFactory.Build`
+  — there is no remote that lets a client change them, now or via any pathway that
+  exists today.
+- Ordinary Roblox physics replication (the client simulates its own `Humanoid`
+  movement and replicates position to the server, which is standard Roblox
+  networking, not something this codebase implements) still applies — that's an
+  engine-level trust model, not a gap introduced here. If speed/movement integrity
+  ever becomes a concern (e.g. a future minigame with leaderboards), that needs
+  server-side movement validation on top of this, which does not exist yet.
 
 ## Known gap: no chat/name filtering yet
 

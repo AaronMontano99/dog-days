@@ -10,6 +10,7 @@ local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local BreedConfig = require(ReplicatedStorage.Shared.Config.BreedConfig)
 local Types = require(ReplicatedStorage.Shared.Types.Types)
 local RemoteManager = require(script.Parent.Parent.Net.RemoteManager)
 
@@ -109,6 +110,37 @@ function DogProfileService.GetDogsForPlayer(player: Player): { [string]: DogProf
 		return {}
 	end
 	return data.Dogs
+end
+
+-- Guarantees the player has a usable ActiveDogId, creating a default starter dog if
+-- they have none yet. Used by DogCharacterService so a brand-new player always has
+-- something to spawn — there's no dog-selection UI yet to make this a real choice.
+-- Returns nil only if the profile isn't loaded or dog creation itself fails.
+function DogProfileService.EnsureStarterDog(player: Player): string?
+	local data = PlayerDataService.GetData(player)
+	if data == nil then
+		return nil
+	end
+
+	if data.ActiveDogId ~= nil and data.Dogs[data.ActiveDogId] ~= nil then
+		return data.ActiveDogId
+	end
+
+	local existingDogId = next(data.Dogs)
+	if existingDogId ~= nil then
+		data.ActiveDogId = existingDogId
+		return existingDogId
+	end
+
+	local defaultBreedId = BreedConfig.FreeStarterBreedOrder[1]
+	local ok, result = DogProfileService.CreateDog(player, defaultBreedId, GameConfig.Dog.DefaultStarterName)
+	if not ok then
+		warn(string.format("[DogProfileService] EnsureStarterDog failed for %s: %s", player.Name, result))
+		return nil
+	end
+
+	PlayerDataService.SyncToClient(player)
+	return result
 end
 
 function DogProfileService.Init()

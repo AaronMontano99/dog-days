@@ -3,10 +3,11 @@
 A Roblox dog-raising/exploration game, built with [Rojo](https://rojo.space/) so the
 source lives in git instead of only inside Roblox Studio.
 
-This repo currently contains the **technical foundation** only: service/controller
-loaders, a networking layer, persistent player + dog data, and the free-breed
-catalog. There is no gameplay (no dog movement, no world) yet — see
-[`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
+This repo has the **technical foundation** (service/controller loaders, a
+networking layer, persistent player + dog data, the free-breed catalog) plus a first
+pass at **Dog Character + Movement V1** — you play as your dog directly, currently a
+placeholder block-primitive rig on a flat test surface (no real art or world yet).
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
 
 Read [`CLAUDE.md`](CLAUDE.md) first — it's the architecture contract every file in
 this repo is built to match.
@@ -32,7 +33,7 @@ this repo is built to match.
 src/
   ReplicatedStorage/
     Shared/
-      Modules/        -- Loader (Init/Start engine shared by server + client)
+      Modules/        -- Loader, DogRigFactory (placeholder rig builder), HexColor
       Types/           -- shared Luau types
       Config/          -- GameConfig, BreedConfig (shared, non-secret)
       Net/              -- RemoteDefs (the remote catalog)
@@ -40,7 +41,8 @@ src/
     Server/
       Bootstrap.server.luau
       ServiceLoader.luau
-      Services/        -- PlayerDataService, BreedService, DogProfileService
+      Services/        -- PlayerDataService, BreedService, DogProfileService,
+                          DogCharacterService
       Net/               -- RemoteManager, RateLimiter (server-side)
       Packages/          -- vendored ProfileStore
   StarterPlayer/

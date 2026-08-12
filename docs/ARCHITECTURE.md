@@ -10,7 +10,8 @@ together, read this.
 
 1. `RemoteManager.Init()` — creates `ReplicatedStorage.Remotes.*` from `RemoteDefs`.
 2. `ServiceLoader:Init()` — runs `Init()` on every registered Service, in
-   registration order: `PlayerDataService` → `BreedService` → `DogProfileService`.
+   registration order: `PlayerDataService` → `BreedService` → `DogProfileService` →
+   `DogCharacterService`.
 3. `ServiceLoader:Start()` — runs `Start()` on every Service, same order.
 
 **Client** (`StarterPlayerScripts/Client/Bootstrap.client.luau`):
@@ -111,6 +112,41 @@ this is meant to close off.
   reference itself — that would let it keep reading/writing after a session had
   already ended elsewhere.
 
+## Character spawn flow
+
+`DogCharacterService` is deliberately the *last* Service to `Init()` — it's the only
+one that depends on both `PlayerDataService` and `DogProfileService` being fully
+usable. Its `Players.PlayerAdded` handler:
+
+```
+onPlayerAdded(player)
+  ├─ poll PlayerDataService.IsLoaded(player) until true, timeout, or player leaves
+  │    (PlayerDataService's own PlayerAdded handler is doing StartSessionAsync
+  │     concurrently in its own coroutine — both handlers were connected during
+  │     their respective Init()s, so there's no ordering guarantee between them;
+  │     polling is what actually enforces the dependency, not connection order)
+  ├─ DogProfileService.EnsureStarterDog(player)
+  │    → player already has an ActiveDogId with a real dog?  return it
+  │    → player has a dog but ActiveDogId is stale/nil?      repair it, return it
+  │    → player has no dog at all?                            create one (first free
+  │                                                             breed, GameConfig's
+  │                                                             DefaultStarterName)
+  └─ DogRigFactory.Build(dog.BreedId, dog.Appearance.CoatColorHex)
+       → Model with Humanoid + a part literally named "HumanoidRootPart"
+       → model.Parent = Workspace, then player.Character = model
+       → Humanoid.Died connects a respawn (same dogId, after RESPAWN_DELAY)
+```
+
+Setting `player.Character` directly (rather than going through
+`Player:LoadCharacter()`) is a well-established community pattern for fully custom
+avatars, but it means Roblox's normal "clone `StarterCharacterScripts` into every new
+character" behavior does **not** happen automatically — that only fires for
+engine-driven character loads. `StarterCharacterScripts` is currently empty anyway
+(no gameplay scripts live there yet), so this doesn't matter today, but it will the
+moment something needs to run per-character (e.g. a local dog-specific controller) —
+that will need to be spawned by `DogCharacterService` explicitly, not assumed to
+appear via `StarterCharacterScripts`.
+
 ## Why `CoatColorHex` is a string, not a `Color3`
 
 ProfileStore's own documentation is explicit: don't store Roblox userdata
@@ -121,7 +157,11 @@ the point of use, not before.
 
 ## What's deliberately not here yet
 
-- No gameplay: no dog movement, no world, no stat progression from play.
+- No real dog art — `DogRigFactory` builds a block-primitive placeholder rig. Legs
+  are statically welded (no walk animation) since there's no animation asset yet.
+- No real world — a single flat `TemporaryTestGround` part exists purely so the
+  placeholder rig has somewhere to stand; no level design, no stat progression from
+  play, no Discoveries system for it to feed.
 - No Robux purchase flow for premium breeds (the *data shape* — `IsFree`,
   `PriceRobux` — exists; nothing populates or spends it).
 - No delta-sync for player data — `PlayerDataSync` sends a full snapshot every time
@@ -129,3 +169,6 @@ the point of use, not before.
   snapshot grows large enough that this matters.
 - No chat/name filtering (`TextService:FilterStringAsync`) — dog names are currently
   only shape-validated (length + character allow-list). See `docs/SECURITY.md`.
+- No dog-selection UI — new players are silently auto-granted a starter dog
+  (`DogProfileService.EnsureStarterDog`) rather than choosing one, purely so movement
+  is testable before any UI exists.
